@@ -3,8 +3,7 @@ __pycache__
 venv
 .venv
 # dependencies
-/node_modules
-package-lock.json
+ 
 
 # OS generated files #
 ######################
