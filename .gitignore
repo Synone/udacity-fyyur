@@ -3,7 +3,8 @@ __pycache__
 venv
 .venv
 # dependencies
- 
+ node_modules
+
 
 # OS generated files #
 ######################
