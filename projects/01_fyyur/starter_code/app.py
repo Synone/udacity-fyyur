@@ -25,7 +25,7 @@ from forms import *
 from flask_migrate import Migrate
 import sys
 import datetime
-from model import Venue, Artist, Show, app
+from model import Venue, Artist, Show, app, db
 
 # ----------------------------------------------------------------------------#
 # App Config.
@@ -151,24 +151,6 @@ def show_venue(venue_id):
                     "start_time": show.start_time.strftime("%Y/%m/%d %H:%M:%S"),
                 }
             )
-    # data = {
-    #     "id": res_data.id,
-    #     "name": res_data.name,
-    #     "genres": res_data.genres.strip("{}").split(","),
-    #     "address": res_data.address,
-    #     "city": res_data.city,
-    #     "state": res_data.state,
-    #     "phone": res_data.phone,
-    #     "website": res_data.website,
-    #     "facebook_link": res_data.facebook_link,
-    #     "seeking_talent": True if res_data.seeking_talent == "y" else False,
-    #     "seeking_description": res_data.seeking_description,
-    #     "image_link": res_data.image_link,
-    #     "past_shows": past_shows,
-    #     "upcoming_shows": upcoming_shows,
-    #     "past_shows_count": len(past_shows),
-    #     "upcoming_shows_count": len(upcoming_shows),
-    # }
     res_data.upcoming_shows = upcoming_shows
     res_data.past_shows = past_shows
     res_data.genres = res_data.genres.strip("{}").split(",")
@@ -483,13 +465,14 @@ def shows():
     shows = Show.query.all()
     data1 = []
     for show in shows:
-        venue = Venue.query.filter_by(id=show.venue_id).first()
-        artist = Artist.query.filter_by(id=show.artist_id).first()
+        venue = show.venue
+        artist = show.artist
         data1.append(
             {
                 "venue_id": show.venue_id,
                 "venue_name": venue.name,
-                "artist_id": show.artist_id,
+                "title": show.title,
+                "artist_id": artist.id,
                 "artist_name": artist.name,
                 "artist_image_link": artist.image_link,
                 "start_time": show.start_time.strftime("%Y/%m/%d %H:%M:%S"),
@@ -512,9 +495,12 @@ def create_show_submission():
     artist_id = request.form["artist_id"]
     venue_id = request.form["venue_id"]
     start_time = request.form["start_time"]
+    title = request.form["title"]
     error = False
     try:
-        show = Show(venue_id=venue_id, artist_id=artist_id, start_time=start_time)
+        show = Show(
+            venue_id=venue_id, artist_id=artist_id, start_time=start_time, title=title
+        )
         db.session.add(show)
         db.session.commit()
     except:
@@ -531,6 +517,38 @@ def create_show_submission():
     # e.g., flash('An error occurred. Show could not be listed.')
     # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
     return render_template("pages/home.html")
+
+
+@app.route("/shows/search", methods=["POST"])
+def seatch_show():
+    # TODO: implement search on venues with partial string search. Ensure it is case-insensitive.
+    # seach for Hop should return "The Musical Hop".
+    # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
+    search_string = request.form.get("search_term")
+    data = []
+    if search_string != "":
+        result = Show.query.filter(Show.title.ilike(f"%{search_string}%")).all()
+        if result:
+            for res in result:
+                data.append(
+                    {
+                        "venue_id": res.venue_id,
+                        "title": res.title,
+                        "venue_name": res.venue.name,
+                        "artist_id": res.artist_id,
+                        "artist_name": res.artist.name,
+                        "artist_image_link": res.artist.image_link,
+                        "start_time": res.start_time.strftime("%Y/%m/%d %H:%M:%S"),
+                    }
+                )
+    else:
+        result = []
+    response = {"count": len(result), "data": data}
+    return render_template(
+        "pages/search_shows.html",
+        results=response,
+        search_term=request.form.get("search_term", ""),
+    )
 
 
 @app.errorhandler(404)

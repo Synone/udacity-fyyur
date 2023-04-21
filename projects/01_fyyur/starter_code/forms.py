@@ -13,6 +13,7 @@ from wtforms.validators import DataRequired, AnyOf, URL
 class ShowForm(Form):
     artist_id = StringField("artist_id")
     venue_id = StringField("venue_id")
+    title = StringField("title")
     start_time = DateTimeField(
         "start_time", validators=[DataRequired()], default=datetime.today()
     )

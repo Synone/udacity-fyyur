@@ -62,6 +62,7 @@ class Artist(db.Model):
 
 class Show(db.Model):
     __tablename__ = "show"
+    title = db.Column(db.String(200))
     venue_id = db.Column(
         db.Integer, db.ForeignKey("venue.id"), nullable=False, primary_key=True
     )
